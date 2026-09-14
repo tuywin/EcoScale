@@ -54,7 +54,7 @@ butonunu kullanın ya da `pkill -f ecoscale.live_engine` çalıştırın.
   saat saat ilerleyen, görevleri anlık karbon sinyaline göre çalıştıran/erteleyen, dashboard'dan
   başlatılıp durdurulabilen canlı bir sistem (`ecoscale/live_engine.py`)
 
-## Sırada ne var (tezin geri kalan %60-70'i)
+## Sırada ne var
 
 - Gerçek karbon yoğunluğu verisi entegrasyonu (ör. ElectricityMaps API) — şu an sentetik
 - LSTM / hibrit model karşılaştırması (Tablo 2.1)
