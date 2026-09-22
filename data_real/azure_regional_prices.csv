@@ -1,0 +1,12 @@
+region,country,iso3,price_usd_hour,note
+swedencentral,Sweden,SWE,0.102,
+northeurope,Ireland,IRL,0.107,
+spaincentral,Spain,ESP,0.107,
+uksouth,United Kingdom,GBR,0.111,
+francecentral,France,FRA,0.112,
+italynorth,Italy,ITA,0.112,
+westeurope,Netherlands,NLD,0.115,
+germanywestcentral,Germany,DEU,0.115,
+polandcentral,Poland,POL,0.115,
+austriaeast,Austria,AUT,0.115,
+qatarcentral,Türkiye (en yakın bölge),TUR,0.118,Azure'un Türkiye'de bölgesi yok; coğrafi olarak en yakın pratik seçenek

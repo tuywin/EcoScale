@@ -45,6 +45,26 @@ gCO₂e/kWh, 2025) — 29 ülke arasında 4. en kirli şebeke. Bu veri yıllık 
 olduğu için saatlik simülasyonlarda kullanılmıyor; saatlik Türkiye/AB verisi için
 `DEVAM_PLANI.md`'deki ENTSO-E adımlarına bakın.
 
+### Deney 2 — Gerçek Bulut Fiyatlandırma Verisi (Azure Retail Prices API)
+
+[`ecoscale/cloud_pricing.py`](ecoscale/cloud_pricing.py), tamamen açık ve kimlik
+doğrulama gerektirmeyen [Azure Retail Prices API](https://prices.azure.com/api/retail/prices)'sinden
+11 gerçek Azure bölgesinin (Standard_D2s_v5, Linux, pay-as-you-go) saatlik $ fiyatını
+çeker ve `data_real/azure_regional_prices.csv` içinde önbelekler (AWS Price List Bulk
+API kasıtlı olarak kullanılmadı — bölge başına 400MB-9GB olduğu ve sunucu tarafında
+filtrelenemediği için). Dashboard'daki **"Sunucu Maliyeti (C_birim)"** seçeneğinden
+bir bölge seçilerek gerçek fiyat, amaç fonksiyonuna doğrudan aktarılabilir. Bölüm 7'de
+bu fiyatlar Ember'ın karbon verisiyle birleştirilip **fiyat–karbon korelasyonu**
+hesaplanıyor (gerçek veride Pearson r ≈ 0.60 — Polonya ve İsveç neredeyse aynı fiyata
+sahipken karbon yoğunlukları 17 kat farklı, tez Bölüm 1.3 madde 3'ü somutlaştırıyor).
+Not: Ne Azure'un ne AWS'in Türkiye'de fiziksel bölgesi var; Türkiye için en yakın
+pratik seçenek olarak Qatar Central kullanıldı (karbon değeri değil, sadece fiyat
+için temsili). Veriyi elle yenilemek için:
+
+```bash
+python -m ecoscale.cloud_pricing
+```
+
 Ayrıca [`ecoscale/live_engine.py`](ecoscale/live_engine.py), Tablo 3.1'de tanımlanan APScheduler
 rolünün **gerçek zamanlı** çalışan karşılığıdır: Streamlit sürecinden bağımsız bir arka plan
 servisi olarak çalışır, her "tick"te bir simülasyon saati ilerler, ML tahmin motorundan gelen
@@ -85,12 +105,14 @@ butonunu kullanın ya da `pkill -f ecoscale.live_engine` çalıştırın.
 - **Deney 1b — Türkiye + AB ülkeleri karşılaştırması**: Ember verisiyle 29 ülkenin
   yıllık ortalama karbon yoğunluğu karşılaştırılıyor (`ecoscale/country_carbon.py`);
   Türkiye AB ortalamasının 2.1 katı ile en kirli 4. şebeke
+- **Deney 2 — gerçek bulut fiyatlandırma verisi**: Azure Retail Prices API'den 11
+  bölgenin gerçek $/saat fiyatı çekiliyor (`ecoscale/cloud_pricing.py`); fiyat–karbon
+  korelasyonu (r≈0.60) ve "aynı fiyata çok farklı karbon" örnekleri dashboard'da
 
 ## Sırada ne var (bkz. `DEVAM_PLANI.md`)
 
 - Gerçek **saatlik** Türkiye/AB verisi (ENTSO-E Transparency Platform — kullanıcının
   kendi hesabıyla kayıt + token gerektiriyor, adımlar `DEVAM_PLANI.md`'de)
-- Deney 2: Gerçek bulut fiyatlandırma API entegrasyonu (AWS Price List / Azure Retail Prices)
 - Deney 3: Gerçek trafik verisi (Azure Public Dataset / Wikipedia Pageviews) ile model yeniden eğitimi
 - LSTM / hibrit model karşılaştırması (Tablo 2.1)
 - Kapsam 3 (embodied carbon) hesaplamalarının modele eklenmesi

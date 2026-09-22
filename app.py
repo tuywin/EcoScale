@@ -15,7 +15,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from ecoscale import country_carbon, live_state
+from ecoscale import cloud_pricing, country_carbon, live_state
 from ecoscale.simulation import SimulationConfig, run_simulation
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -51,7 +51,19 @@ with st.sidebar:
     carbon_source = "uk_real" if "Gerçek" in carbon_source_label else "synthetic"
     capacity = st.slider("Sunucu kapasitesi (req/sn)", 20, 150, 60, step=5)
     power_kw = st.slider("Sunucu güç tüketimi (kWh/saat)", 0.1, 1.0, 0.35, step=0.05)
-    cost_hour = st.slider("Sunucu maliyeti ($/saat) — C_birim", 0.02, 0.50, 0.12, step=0.01)
+
+    cost_source_label = st.radio(
+        "Sunucu Maliyeti (C_birim)",
+        ["Manuel", "Gerçek (Azure Retail Prices API)"],
+        help="Gerçek seçeneği, Azure Retail Prices API'den çekilen bir bölgenin gerçek $/saat fiyatını kullanır (Deney 2).",
+    )
+    if "Gerçek" in cost_source_label:
+        prices_df = cloud_pricing.fetch_all()
+        region_label = st.selectbox("Azure Bölgesi", prices_df["region"] + " — " + prices_df["country"])
+        cost_hour = float(prices_df.loc[prices_df["region"] + " — " + prices_df["country"] == region_label, "price_usd_hour"].iloc[0])
+        st.metric("C_birim ($/saat)", f"${cost_hour:.4f}")
+    else:
+        cost_hour = st.slider("Sunucu maliyeti ($/saat) — C_birim", 0.02, 0.50, 0.12, step=0.01)
     st.divider()
     alpha = st.slider("α — Maliyet ağırlığı", 0.0, 1.0, 0.5, step=0.05)
     st.metric("β — Karbon ağırlığı", f"{1 - alpha:.2f}")
@@ -103,6 +115,13 @@ if carbon_source == "uk_real":
     st.info(
         "🇬🇧 Karbon yoğunluğu verisi **UK Carbon Intensity API**'den (api.carbonintensity.org.uk) çekilen "
         "gerçek İngiltere şebeke verisidir. Trafik verisi henüz sentetiktir (Deney 3'te gerçek veriyle değiştirilecek).",
+        icon="🔬",
+    )
+
+if "Gerçek" in cost_source_label:
+    st.info(
+        f"💶 Sunucu maliyeti **Azure Retail Prices API**'den çekilen gerçek **{region_label}** fiyatıdır "
+        f"(Standard_D2s_v5, Linux, pay-as-you-go).",
         icon="🔬",
     )
 
@@ -290,6 +309,53 @@ st.caption(
     f"karşılaştırılan {len(country_df)} ülke arasında **{rank}. sırada** en karbon-yoğun şebeke. "
     f"Bu da EcoScale gibi karbon-bilinçli sistemlerin Türkiye bağlamında görece daha yüksek etki potansiyeli "
     f"taşıdığını gösteriyor."
+)
+
+st.divider()
+
+# --- Coklu bolge: fiyat vs karbon ---
+st.subheader("7. Çoklu Bölge Karşılaştırması — Fiyat mı, Karbon mu Paralel Gidiyor?")
+st.caption(
+    "Kaynak: [Azure Retail Prices API](https://prices.azure.com/api/retail/prices) (gerçek $/saat, Standard_D2s_v5) "
+    "× [Ember](https://ember-energy.org/data/yearly-electricity-data/) (gerçek yıllık ortalama karbon yoğunluğu). "
+    "Tez Bölüm 1.3'teki 'bölgelere göre fiyat ile karbon yoğunluğu her zaman paralel gitmiyor' savının gerçek veriyle sınanması."
+)
+
+region_df = cloud_pricing.fetch_all().merge(
+    country_carbon.load_or_fetch()[["iso3", "carbon_intensity"]], on="iso3", how="left"
+)
+correlation = region_df["price_usd_hour"].corr(region_df["carbon_intensity"])
+
+fig_regions = go.Figure(
+    go.Scatter(
+        x=region_df["price_usd_hour"],
+        y=region_df["carbon_intensity"],
+        mode="markers+text",
+        text=region_df["country"],
+        textposition="top center",
+        marker=dict(
+            size=14,
+            color=["#E45756" if iso3 == "TUR" else "#54A24B" for iso3 in region_df["iso3"]],
+        ),
+    )
+)
+fig_regions.update_layout(
+    height=450,
+    margin=dict(t=10, b=10),
+    xaxis_title="Sunucu Maliyeti ($/saat, Standard_D2s_v5)",
+    yaxis_title="Karbon Yoğunluğu (gCO₂e/kWh, yıllık ortalama)",
+)
+st.plotly_chart(fig_regions, use_container_width=True)
+
+cheapest = region_df.loc[region_df["price_usd_hour"].idxmin()]
+dirtiest_at_similar_price = region_df[region_df["price_usd_hour"] <= region_df["price_usd_hour"].median() + 0.005].sort_values("carbon_intensity", ascending=False).iloc[0]
+st.caption(
+    f"Fiyat–karbon korelasyonu (Pearson r): **{correlation:.2f}** ({len(region_df)} bölge). "
+    f"Örnek: **{dirtiest_at_similar_price['country']}** (\\${dirtiest_at_similar_price['price_usd_hour']:.3f}/saat, "
+    f"{dirtiest_at_similar_price['carbon_intensity']:.0f} gCO₂e/kWh) ile **{cheapest['country']}** "
+    f"(\\${cheapest['price_usd_hour']:.3f}/saat, {cheapest['carbon_intensity']:.0f} gCO₂e/kWh) neredeyse aynı fiyat "
+    f"aralığındayken karbon yoğunlukları arasında büyük fark var — bu da bölge seçiminin sadece fiyata göre değil, "
+    f"karbon yoğunluğuna göre de yapılabileceğini (çoklu bölge görev yönlendirme) gösteriyor."
 )
 
 if engine_alive and live_autorefresh:

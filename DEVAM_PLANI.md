@@ -52,13 +52,23 @@ nereden çekeceğiz, ve bunun hangi tez iddiasını doğrulayacağı belirtilmi�
   güneş MW) emisyon faktörleriyle saatlik karbon yoğunluğu türetilebilir.
 
 ### Deney 2: Gerçek Bulut Fiyatlandırmasıyla Maliyet Modeli
-- **Kaynak:** AWS Price List API + Azure Retail Prices API (ikisi de açık).
-- **Ne değişecek:** Sabit `C_birim` parametresi, gerçek bir instance tipinin
-  (ör. AWS t3.medium / Azure Standard_B2s) bölgeye göre saatlik fiyatıyla
-  değiştirilecek.
-- **Doğrulanacak iddia:** Tez Bölüm 1.3, madde 3 — "bölgelere göre saatlik
-  enerji maliyeti ile karbon yoğunluğu her zaman paralel gitmiyor" savı;
-  2-3 bölgeyi (fiyat, karbon) çiftleriyle karşılaştırarak somutlaştırılacak.
+### ✅ Deney 2: Gerçek Bulut Fiyatlandırmasıyla Maliyet Modeli (TAMAMLANDI)
+- **Kaynak:** Azure Retail Prices API (`ecoscale/cloud_pricing.py`). AWS Price List
+  API kullanılmadı — bulk dosyalar bölge başına 400MB-9GB ve sunucu tarafında
+  filtrelenemiyor; AWS'in filtrelenebilir "Query API"si ise AWS SDK + IAM
+  kimlik bilgisi gerektirdiği için (kullanıcının kendi AWS hesabı olmadan
+  yapılamaz) bu deneyde atlandı.
+- **Ne değişti:** Sabit `C_birim` parametresi, dashboard'dan seçilen gerçek bir
+  Azure bölgesinin (Standard_D2s_v5, Linux) gerçek saatlik fiyatıyla
+  değiştirilebiliyor.
+- **Doğrulanan iddia:** Tez Bölüm 1.3, madde 3 — "bölgelere göre saatlik
+  enerji maliyeti ile karbon yoğunluğu her zaman paralel gitmiyor" savı; 11
+  bölge üzerinde Pearson r≈0.60 (zayıf-orta korelasyon), Polonya ve İsveç
+  neredeyse aynı fiyata sahipken ($0.115 vs $0.102/saat) karbon yoğunlukları
+  17 kat farklı (591 vs 35 gCO₂e/kWh) — somut örnek.
+- **Ek gerçek bulgu:** Ne Azure'un ne AWS'in Türkiye'de fiziksel bölgesi var;
+  Qatar Central en yakın pratik seçenek olarak kullanıldı (sadece fiyat için,
+  karbon verisi Ember'dan geliyor).
 
 ### Deney 3: Gerçek Trafik Verisiyle Model Doğrulama
 - **Kaynak A:** Azure Public Dataset — gerçek VM CPU kullanım serisi.
