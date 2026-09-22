@@ -71,12 +71,11 @@ butonunu kullanın ya da `pkill -f ecoscale.live_engine` çalıştırın.
   gerçek İngiltere şebeke verisiyle tüm sonuçlar yeniden üretilebiliyor (`ecoscale/real_data.py`);
   gerçek veride de proaktif yaklaşım ~%18 karbon tasarrufu sağlıyor (sentetik veride ~%20)
 
-## Sırada ne var (tezin geri kalan kısmı — bkz. `DEVAM_PLANI.md`)
+## Sırada ne var (bkz. `DEVAM_PLANI.md`)
 
 - Deney 1'in Türkiye'ye uyarlanması (EPİAŞ Şeffaflık Platformu)
 - Deney 2: Gerçek bulut fiyatlandırma API entegrasyonu (AWS Price List / Azure Retail Prices)
 - Deney 3: Gerçek trafik verisi (Azure Public Dataset / Wikipedia Pageviews) ile model yeniden eğitimi
 - LSTM / hibrit model karşılaştırması (Tablo 2.1)
-- Gerçek bulut fiyatlandırma API entegrasyonu (bölgeye göre saatlik tarife)
 - Kapsam 3 (embodied carbon) hesaplamalarının modele eklenmesi
 - Kullanıcı testleri ve performans/yük testleri
