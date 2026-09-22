@@ -70,13 +70,22 @@ nereden çekeceğiz, ve bunun hangi tez iddiasını doğrulayacağı belirtilmi�
   Qatar Central en yakın pratik seçenek olarak kullanıldı (sadece fiyat için,
   karbon verisi Ember'dan geliyor).
 
-### Deney 3: Gerçek Trafik Verisiyle Model Doğrulama
-- **Kaynak A:** Azure Public Dataset — gerçek VM CPU kullanım serisi.
-- **Kaynak B:** Wikipedia Pageviews — gerçek saatlik web trafiği.
-- **Ne değişecek:** Random Forest modeli sentetik `traffic_rps` yerine bu
-  gerçek serilerden biriyle yeniden eğitilecek.
-- **Doğrulanacak iddia:** Özet'te geçen "%90 doğruluk" rakamının gerçek,
-  gürültülü veride de korunup korunmadığı (R²/MAE/RMSE yeniden raporlanacak).
+### ✅ Deney 3: Gerçek Trafik Verisiyle Model Doğrulama (TAMAMLANDI)
+- **Kaynak:** Wikipedia Pageviews API (`ecoscale/real_traffic.py`) — İngilizce
+  Wikipedia'nın gerçek saatlik görüntülenme sayısı, oransal olarak EcoScale
+  ölçeğine (hedef ortalama) taşınıyor. Azure Public Dataset değerlendirildi
+  ama dosyaları (bölge başına GB'larca, özel format) bu deney için pratik
+  değildi.
+- **Ne değişti:** Random Forest modeli sentetik `traffic_rps` yerine gerçek
+  Wikipedia trafiğiyle yeniden eğitiliyor; özellik mühendisliği (saat/gün/lag)
+  gerçek takvim zaman damgalarından hesaplanıyor.
+- **Doğrulanan iddia:** Özet'te geçen "%90 doğruluk" rakamı — gerçek, hiç
+  görülmemiş web trafiğinde **R²=0.911** elde edildi (MAE=9.4, RMSE=18.1),
+  iddia edilen değerin üzerinde.
+- **Ek gözlem:** Gerçek toplam Wikipedia trafiği, sentetik modelin varsaydığı
+  tekil-kaynaklı günlük eğriden çok daha az oynak (std/mean oranı sentetikte
+  ~0.55 iken gerçek veride ~0.11) — çok sayıda bağımsız kullanıcının toplamı
+  olması istatistiksel olarak beklenen bir yumuşama etkisi.
 
 ## Faz 2 — Model Karşılaştırma ve Duyarlılık Analizi
 

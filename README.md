@@ -65,6 +65,25 @@ için temsili). Veriyi elle yenilemek için:
 python -m ecoscale.cloud_pricing
 ```
 
+### Deney 3 — Gerçek Trafik Verisi (Wikipedia Pageviews API)
+
+[`ecoscale/real_traffic.py`](ecoscale/real_traffic.py), Wikimedia'nın ücretsiz ve
+kayıt gerektirmeyen [Pageviews API](https://wikimedia.org/api/rest_v1/metrics/pageviews/aggregate/)'sinden
+İngilizce Wikipedia'nın gerçek **saatlik** toplam görüntülenme sayısını çeker ve
+`data_real/wikipedia_hourly_pageviews.csv` içinde önbelleğe alır (Azure Public
+Dataset kasıtlı olarak kullanılmadı — VM trace dosyaları pratik olmayacak kadar
+büyük ve özel araç gerektiriyor). Mutlak görüntülenme sayısı (~13M/saat) EcoScale'in
+sunucu ölçeğiyle kıyaslanamayacağı için seri **oransal olarak** yeniden ölçeklendirilir
+(gerçek günlük/haftalık desen ve gürültü korunur, sadece mutlak büyüklük ayarlanır).
+Dashboard'daki **"Trafik Verisi"** seçeneğinden etkinleştirilebilir; gerçek, hiç
+görülmemiş web trafiğinde Random Forest modeli **R²=0.911** başarı elde ediyor —
+tezin özet bölümünde iddia edilen %90'ı gerçek veride de doğruluyor. Veriyi elle
+yenilemek için:
+
+```bash
+python -m ecoscale.real_traffic
+```
+
 Ayrıca [`ecoscale/live_engine.py`](ecoscale/live_engine.py), Tablo 3.1'de tanımlanan APScheduler
 rolünün **gerçek zamanlı** çalışan karşılığıdır: Streamlit sürecinden bağımsız bir arka plan
 servisi olarak çalışır, her "tick"te bir simülasyon saati ilerler, ML tahmin motorundan gelen
@@ -108,12 +127,14 @@ butonunu kullanın ya da `pkill -f ecoscale.live_engine` çalıştırın.
 - **Deney 2 — gerçek bulut fiyatlandırma verisi**: Azure Retail Prices API'den 11
   bölgenin gerçek $/saat fiyatı çekiliyor (`ecoscale/cloud_pricing.py`); fiyat–karbon
   korelasyonu (r≈0.60) ve "aynı fiyata çok farklı karbon" örnekleri dashboard'da
+- **Deney 3 — gerçek trafik verisi**: Wikipedia Pageviews API'den gerçek saatlik web
+  trafiği çekiliyor (`ecoscale/real_traffic.py`); gerçek, gürültülü veride de
+  R²=0.911 başarı elde ediliyor (tezin iddia ettiği %90'ı gerçek veride doğruluyor)
 
 ## Sırada ne var (bkz. `DEVAM_PLANI.md`)
 
 - Gerçek **saatlik** Türkiye/AB verisi (ENTSO-E Transparency Platform — kullanıcının
   kendi hesabıyla kayıt + token gerektiriyor, adımlar `DEVAM_PLANI.md`'de)
-- Deney 3: Gerçek trafik verisi (Azure Public Dataset / Wikipedia Pageviews) ile model yeniden eğitimi
-- LSTM / hibrit model karşılaştırması (Tablo 2.1)
+- LSTM / hibrit model karşılaştırması (Tablo 2.1) — artık gerçek trafik verisiyle de yapılabilir
 - Kapsam 3 (embodied carbon) hesaplamalarının modele eklenmesi
 - Kullanıcı testleri ve performans/yük testleri

@@ -24,7 +24,7 @@ st.set_page_config(page_title="EcoScale", page_icon="🌿", layout="wide")
 
 
 @st.cache_data(show_spinner="Simulasyon calistiriliyor (veri uretimi + model egitimi)...")
-def cached_simulation(days, capacity, power_kw, cost_hour, alpha, carbon_source):
+def cached_simulation(days, capacity, power_kw, cost_hour, alpha, carbon_source, traffic_source):
     config = SimulationConfig(
         days=days,
         capacity_per_server=capacity,
@@ -33,6 +33,7 @@ def cached_simulation(days, capacity, power_kw, cost_hour, alpha, carbon_source)
         alpha=alpha,
         beta=1 - alpha,
         carbon_source=carbon_source,
+        traffic_source=traffic_source,
     )
     return run_simulation(config)
 
@@ -43,6 +44,12 @@ st.caption("Karbon Ayak İzi ve Maliyet Odaklı Akıllı Bulut Kaynak Yönetimi 
 with st.sidebar:
     st.header("Sistem Parametreleri")
     days = st.slider("Simüle edilen gün sayısı", 30, 180, 120, step=10)
+    traffic_source_label = st.radio(
+        "Trafik Verisi",
+        ["Sentetik", "Gerçek (Wikipedia Pageviews API)"],
+        help="Gerçek seçeneği, İngilizce Wikipedia'nın saatlik gerçek görüntülenme sayısını (oransal olarak yeniden ölçeklendirilmiş) kullanır (Deney 3).",
+    )
+    traffic_source = "wikipedia_real" if "Gerçek" in traffic_source_label else "synthetic"
     carbon_source_label = st.radio(
         "Karbon Yoğunluğu Verisi",
         ["Sentetik", "Gerçek (UK Carbon Intensity API)"],
@@ -109,12 +116,20 @@ with st.sidebar:
 
     live_autorefresh = st.checkbox("🔄 Canlı görünümü otomatik yenile", value=engine_running)
 
-result = cached_simulation(days, capacity, power_kw, cost_hour, alpha, carbon_source)
+result = cached_simulation(days, capacity, power_kw, cost_hour, alpha, carbon_source, traffic_source)
 
 if carbon_source == "uk_real":
     st.info(
         "🇬🇧 Karbon yoğunluğu verisi **UK Carbon Intensity API**'den (api.carbonintensity.org.uk) çekilen "
-        "gerçek İngiltere şebeke verisidir. Trafik verisi henüz sentetiktir (Deney 3'te gerçek veriyle değiştirilecek).",
+        "gerçek İngiltere şebeke verisidir.",
+        icon="🔬",
+    )
+
+if traffic_source == "wikipedia_real":
+    st.info(
+        "📖 Trafik verisi **Wikipedia Pageviews API**'den (İngilizce Wikipedia, saatlik) çekilen gerçek "
+        "veridir; mutlak ölçek EcoScale'in sunucu kapasitesine uyacak şekilde **oransal olarak** yeniden "
+        "ölçeklendirilmiştir — gerçek olan, mutlak sayı değil günlük/haftalık desen ve gürültüdür.",
         icon="🔬",
     )
 

@@ -11,6 +11,20 @@ import numpy as np
 import pandas as pd
 
 
+def generate_carbon_series(n_hours: int, seed: int = 42, start_hour_of_day: int = 0) -> np.ndarray:
+    """Sentetik sebeke karbon yogunlugu serisi (bagimsiz kullanim icin, ornegin
+    gercek trafik verisiyle birlikte kullanildiginda — bkz. ecoscale/real_traffic.py)."""
+    rng = np.random.default_rng(seed)
+    hour = (np.arange(n_hours) + start_hour_of_day) % 24
+
+    solar_dip = np.exp(-((hour - 13) ** 2) / (2 * 3.0 ** 2))
+    evening_peak = np.exp(-((hour - 20) ** 2) / (2 * 2.0 ** 2))
+    weather_drift = 40 * np.sin(np.arange(n_hours) / (24 * 7) * 2 * np.pi + 1.0)
+    carbon = 420 - 180 * solar_dip + 90 * evening_peak + weather_drift
+    carbon += rng.normal(0, 15, n_hours)
+    return np.clip(carbon, 60, 650).round(1)
+
+
 def generate_dataset(days: int = 120, seed: int = 42) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     periods = days * 24
@@ -29,13 +43,7 @@ def generate_dataset(days: int = 120, seed: int = 42) -> pd.DataFrame:
     traffic = (200 + 800 * daily_shape) * weekday_factor * trend + noise * 200 + spikes * 400
     traffic = np.clip(traffic, 50, None)
 
-    # --- Karbon yogunlugu: ogle saatlerinde gunes ile dusus, sabah/aksam pikinde fosil yakit ---
-    solar_dip = np.exp(-((hour - 13) ** 2) / (2 * 3.0 ** 2))
-    evening_peak = np.exp(-((hour - 20) ** 2) / (2 * 2.0 ** 2))
-    weather_drift = 40 * np.sin(np.arange(periods) / (24 * 7) * 2 * np.pi + 1.0)
-    carbon = 420 - 180 * solar_dip + 90 * evening_peak + weather_drift
-    carbon += rng.normal(0, 15, periods)
-    carbon = np.clip(carbon, 60, 650)
+    carbon = generate_carbon_series(periods, seed=seed)
 
     df = pd.DataFrame(
         {

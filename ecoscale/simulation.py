@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from ecoscale import optimizer, real_data
-from ecoscale.data import generate_dataset
+from ecoscale import optimizer, real_data, real_traffic
+from ecoscale.data import generate_carbon_series, generate_dataset
 from ecoscale.forecasting import ForecastResult, train_forecaster
 
 DEFAULT_TASKS = [
@@ -25,6 +25,7 @@ class SimulationConfig:
     alpha: float = 0.5
     beta: float = 0.5
     carbon_source: str = "synthetic"  # "synthetic" | "uk_real" (Deney 1 — UK Carbon Intensity API)
+    traffic_source: str = "synthetic"  # "synthetic" | "wikipedia_real" (Deney 3 — Wikipedia Pageviews API)
 
 
 @dataclass
@@ -43,11 +44,18 @@ class SimulationResult:
 
 
 def run_simulation(config: SimulationConfig) -> SimulationResult:
-    dataset = generate_dataset(days=config.days)
-
-    if config.carbon_source == "uk_real":
-        dataset = dataset.copy()
-        dataset["carbon_intensity"] = real_data.get_carbon_series(len(dataset))
+    if config.traffic_source == "wikipedia_real":
+        dataset = real_traffic.build_traffic_dataset(config.days)
+        dataset["carbon_intensity"] = (
+            real_data.get_carbon_series(len(dataset))
+            if config.carbon_source == "uk_real"
+            else generate_carbon_series(len(dataset))
+        )
+    else:
+        dataset = generate_dataset(days=config.days)
+        if config.carbon_source == "uk_real":
+            dataset = dataset.copy()
+            dataset["carbon_intensity"] = real_data.get_carbon_series(len(dataset))
 
     forecast = train_forecaster(dataset)
     test_df = forecast.test_df.reset_index(drop=True)
