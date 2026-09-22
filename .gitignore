@@ -1,7 +1,7 @@
 .venv/
 __pycache__/
 *.pyc
-*.csv
+/ecoscale_dataset.csv
 .streamlit/
 .state/
 .DS_Store

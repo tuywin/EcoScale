@@ -24,7 +24,7 @@ st.set_page_config(page_title="EcoScale", page_icon="🌿", layout="wide")
 
 
 @st.cache_data(show_spinner="Simulasyon calistiriliyor (veri uretimi + model egitimi)...")
-def cached_simulation(days, capacity, power_kw, cost_hour, alpha):
+def cached_simulation(days, capacity, power_kw, cost_hour, alpha, carbon_source):
     config = SimulationConfig(
         days=days,
         capacity_per_server=capacity,
@@ -32,6 +32,7 @@ def cached_simulation(days, capacity, power_kw, cost_hour, alpha):
         cost_per_server_hour=cost_hour,
         alpha=alpha,
         beta=1 - alpha,
+        carbon_source=carbon_source,
     )
     return run_simulation(config)
 
@@ -42,6 +43,12 @@ st.caption("Karbon Ayak İzi ve Maliyet Odaklı Akıllı Bulut Kaynak Yönetimi 
 with st.sidebar:
     st.header("Sistem Parametreleri")
     days = st.slider("Simüle edilen gün sayısı", 30, 180, 120, step=10)
+    carbon_source_label = st.radio(
+        "Karbon Yoğunluğu Verisi",
+        ["Sentetik", "Gerçek (UK Carbon Intensity API)"],
+        help="Gerçek seçeneği, National Energy System Operator'ın ücretsiz API'sinden çekilip önbelleklenen gerçek İngiltere şebeke verisini kullanır (Deney 1).",
+    )
+    carbon_source = "uk_real" if "Gerçek" in carbon_source_label else "synthetic"
     capacity = st.slider("Sunucu kapasitesi (req/sn)", 20, 150, 60, step=5)
     power_kw = st.slider("Sunucu güç tüketimi (kWh/saat)", 0.1, 1.0, 0.35, step=0.05)
     cost_hour = st.slider("Sunucu maliyeti ($/saat) — C_birim", 0.02, 0.50, 0.12, step=0.01)
@@ -90,7 +97,14 @@ with st.sidebar:
 
     live_autorefresh = st.checkbox("🔄 Canlı görünümü otomatik yenile", value=engine_running)
 
-result = cached_simulation(days, capacity, power_kw, cost_hour, alpha)
+result = cached_simulation(days, capacity, power_kw, cost_hour, alpha, carbon_source)
+
+if carbon_source == "uk_real":
+    st.info(
+        "🇬🇧 Karbon yoğunluğu verisi **UK Carbon Intensity API**'den (api.carbonintensity.org.uk) çekilen "
+        "gerçek İngiltere şebeke verisidir. Trafik verisi henüz sentetiktir (Deney 3'te gerçek veriyle değiştirilecek).",
+        icon="🔬",
+    )
 
 # --- KPI satırı ---
 col1, col2, col3, col4 = st.columns(4)

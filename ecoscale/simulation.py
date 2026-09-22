@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from ecoscale import optimizer
+from ecoscale import optimizer, real_data
 from ecoscale.data import generate_dataset
 from ecoscale.forecasting import ForecastResult, train_forecaster
 
@@ -24,6 +24,7 @@ class SimulationConfig:
     cost_per_server_hour: float = 0.12  # C_birim ($/saat)
     alpha: float = 0.5
     beta: float = 0.5
+    carbon_source: str = "synthetic"  # "synthetic" | "uk_real" (Deney 1 — UK Carbon Intensity API)
 
 
 @dataclass
@@ -43,6 +44,11 @@ class SimulationResult:
 
 def run_simulation(config: SimulationConfig) -> SimulationResult:
     dataset = generate_dataset(days=config.days)
+
+    if config.carbon_source == "uk_real":
+        dataset = dataset.copy()
+        dataset["carbon_intensity"] = real_data.get_carbon_series(len(dataset))
+
     forecast = train_forecaster(dataset)
     test_df = forecast.test_df.reset_index(drop=True)
 

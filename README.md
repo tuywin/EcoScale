@@ -19,6 +19,20 @@ bulur.
 
 `ecoscale/simulation.py` bu dört katmanı tek bir akışta birleştirir (tarihsel/toplu simülasyon).
 
+### Deney 1 — Gerçek Karbon Yoğunluğu Verisi (UK Carbon Intensity API)
+
+[`ecoscale/real_data.py`](ecoscale/real_data.py), National Energy System Operator'ın
+ücretsiz ve kayıt gerektirmeyen [Carbon Intensity API](https://api.carbonintensity.org.uk/)'sinden
+İngiltere şebekesinin gerçek yarım-saatlik gCO₂eq/kWh verisini çeker, saatliğe indirger
+ve `data_real/uk_carbon_intensity.csv` içinde önbelleğe alır (ağ erişimi olmadan da
+tekrar kullanılabilir). Dashboard'daki **"Karbon Yoğunluğu Verisi"** seçeneğinden
+sentetik veri yerine bu gerçek veri kullanılarak tüm optimizasyon/karşılaştırma
+sonuçları yeniden hesaplanabilir. Veriyi elle yenilemek için:
+
+```bash
+python -m ecoscale.real_data
+```
+
 Ayrıca [`ecoscale/live_engine.py`](ecoscale/live_engine.py), Tablo 3.1'de tanımlanan APScheduler
 rolünün **gerçek zamanlı** çalışan karşılığıdır: Streamlit sürecinden bağımsız bir arka plan
 servisi olarak çalışır, her "tick"te bir simülasyon saati ilerler, ML tahmin motorundan gelen
@@ -53,10 +67,15 @@ butonunu kullanın ya da `pkill -f ecoscale.live_engine` çalıştırın.
 - **APScheduler tabanlı gerçek zamanlı zamanlama motoru**: bağımsız arka plan sürecinde
   saat saat ilerleyen, görevleri anlık karbon sinyaline göre çalıştıran/erteleyen, dashboard'dan
   başlatılıp durdurulabilen canlı bir sistem (`ecoscale/live_engine.py`)
+- **Deney 1 — gerçek karbon yoğunluğu verisi**: UK Carbon Intensity API'den çekilen
+  gerçek İngiltere şebeke verisiyle tüm sonuçlar yeniden üretilebiliyor (`ecoscale/real_data.py`);
+  gerçek veride de proaktif yaklaşım ~%18 karbon tasarrufu sağlıyor (sentetik veride ~%20)
 
-## Sırada ne var (tezin geri kalan %60-70'i)
+## Sırada ne var (tezin geri kalan kısmı — bkz. `DEVAM_PLANI.md`)
 
-- Gerçek karbon yoğunluğu verisi entegrasyonu (ör. ElectricityMaps API) — şu an sentetik
+- Deney 1'in Türkiye'ye uyarlanması (EPİAŞ Şeffaflık Platformu)
+- Deney 2: Gerçek bulut fiyatlandırma API entegrasyonu (AWS Price List / Azure Retail Prices)
+- Deney 3: Gerçek trafik verisi (Azure Public Dataset / Wikipedia Pageviews) ile model yeniden eğitimi
 - LSTM / hibrit model karşılaştırması (Tablo 2.1)
 - Gerçek bulut fiyatlandırma API entegrasyonu (bölgeye göre saatlik tarife)
 - Kapsam 3 (embodied carbon) hesaplamalarının modele eklenmesi
