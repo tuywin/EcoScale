@@ -15,25 +15,41 @@ nereden çekeceğiz, ve bunun hangi tez iddiasını doğrulayacağı belirtilmi�
 | 4 | [Azure Retail Prices API](https://prices.azure.com/api/retail/prices) | Instance tipi/bölge bazlı saatlik $ fiyat | Kimlik doğrulama yok | Ücretsiz |
 | 5 | [Azure Public Dataset (AzurePublicDatasetV2)](https://github.com/Azure/AzurePublicDataset) | ~2.6M gerçek VM'in 5 dakikalık CPU kullanım zaman serisi | Genel erişim, dosya indirme | Ücretsiz |
 | 6 | [Wikipedia Pageviews](https://dumps.wikimedia.org/other/pageviews/) | Saatlik gerçek web trafiği (günlük/haftalık periyodiklik güçlü) | Genel erişim, dosya indirme | Ücretsiz |
+| 7 | [Ember Yearly Electricity Data](https://ember-energy.org/data/yearly-electricity-data/) | Türkiye + tüm AB ülkelerinin **yıllık ortalama** gCO₂e/kWh değeri | Kayıt gerektirmez, doğrudan CSV | Ücretsiz |
+| 8 | [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/) | Tüm Avrupa ülkeleri (+ Türkiye/TEİAŞ) için **saatlik** gerçek üretim/emisyon verisi | Ücretsiz kayıt + e-posta ile token talebi (~3 iş günü) | Ücretsiz |
 
 ---
 
 ## Faz 1 — Gerçek Veri Entegrasyonu
 
-### Deney 1: Gerçek Karbon Yoğunluğu ile Yeniden Değerlendirme
-- **Birincil kaynak:** EPİAŞ Şeffaflık Platformu'ndan Türkiye'nin saatlik üretim
-  kaynak dağılımını çekip, her kaynağa literatürdeki emisyon faktörünü
-  (kömür ≈820, doğalgaz ≈490, hidro/rüzgar/güneş ≈0-45 gCO₂eq/kWh) uygulayarak
-  saatlik **ortalama karbon yoğunluğu** hesaplamak (tez Bölüm 2.4.2'deki
-  formülasyonun birebir uygulaması).
-- **Karşılaştırma kaynağı:** UK Carbon Intensity API — hazır seri, kayıt
-  gerektirmiyor; Türkiye verisi hazırlanana kadar hızlı prototipleme ve
-  ayrıca "fosil ağırlıklı vs. rüzgar ağırlıklı şebeke" karşılaştırması için.
-- **Ne değişecek:** `ecoscale/data.py`'deki sentetik `carbon_intensity` serisi,
-  gerçek veriden okunan bir seriyle değiştirilecek (yeni `ecoscale/data_real.py`
-  modülü).
-- **Doğrulanacak iddia:** Task-shifting algoritmasının gerçek şebeke
-  verisinde de anlamlı karbon tasarrufu sağladığı.
+### ✅ Deney 1: Gerçek Karbon Yoğunluğu ile Yeniden Değerlendirme (TAMAMLANDI)
+- **Kaynak:** UK Carbon Intensity API — `ecoscale/real_data.py`, dashboard'da
+  "Sentetik / Gerçek" seçici. Sonuç: gerçek veride de ~%18 karbon tasarrufu
+  (sentetik veride ~%20) — algoritma farklı şebeke profillerinde genelliyor.
+
+### ✅ Deney 1b: Türkiye + AB Ülkeleri Karşılaştırması (TAMAMLANDI)
+- **Kaynak:** Ember Yearly Electricity Data — `ecoscale/country_carbon.py`,
+  dashboard bölüm 6. **Yıllık ortalama** (saatlik değil) ama tamamen gerçek veri.
+- **Bulgu:** Türkiye 476 gCO₂e/kWh (2025) ile AB ortalamasının (~224) 2.1 katı;
+  29 ülke arasında 4. en karbon-yoğun şebeke (sadece Polonya, Kıbrıs, Malta daha
+  kirli). Bu, EcoScale'in Türkiye bağlamında görece yüksek etki potansiyeli
+  taşıdığını gösteren güçlü bir bulgu.
+- **Sıradaki adım — gerçek SAATLİK Türkiye/AB verisi:** Bunun için tek/birleşik
+  kaynak **ENTSO-E Transparency Platform**. Kayıt tamamen ücretsiz ama hesap
+  oluşturma kullanıcının kendi e-postasıyla yapılmalı (bkz. adımlar aşağıda) —
+  bu adımı ben senin adına yapamam, hesap açma/kimlik doğrulama kullanıcının
+  kendisine ait olmalı. Token'ı aldığında bana verirsen saatlik Türkiye+AB
+  entegrasyonunu (Deney 1'in devamı olarak) hemen yaparım.
+  1. https://transparency.entsoe.eu/ adresinden ücretsiz hesap oluştur.
+  2. `transparency@entsoe.eu` adresine konu satırı "RESTful API access" olan
+     bir e-posta gönder, gövdede kayıtlı e-posta adresini belirt.
+  3. ~3 iş günü içinde onay gelir; hesap ayarlarından "Web API Security Token"
+     oluşturulur.
+  4. Token'ı bana ilet, `ecoscale/real_data.py` benzeri bir modülle Türkiye
+     (TEİAŞ) ve seçili AB ülkelerinin saatlik verisini entegre edelim.
+- **Alternatif (daha hızlı ama kayıt gerektiren):** EPİAŞ Şeffaflık Platformu —
+  sadece Türkiye için, üretim kaynak dağılımından (kömür/doğalgaz/hidro/rüzgar/
+  güneş MW) emisyon faktörleriyle saatlik karbon yoğunluğu türetilebilir.
 
 ### Deney 2: Gerçek Bulut Fiyatlandırmasıyla Maliyet Modeli
 - **Kaynak:** AWS Price List API + Azure Retail Prices API (ikisi de açık).

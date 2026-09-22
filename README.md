@@ -33,6 +33,18 @@ sonuçları yeniden hesaplanabilir. Veriyi elle yenilemek için:
 python -m ecoscale.real_data
 ```
 
+### Deney 1b — Türkiye ve AB Ülkeleri Karşılaştırması (Ember)
+
+[`ecoscale/country_carbon.py`](ecoscale/country_carbon.py), [Ember Yearly Electricity
+Data](https://ember-energy.org/data/yearly-electricity-data/)'dan Türkiye ve 27 AB
+üyesi ülkenin **yıllık ortalama** şebeke karbon yoğunluğunu (gCO₂e/kWh) çekip
+`data_real/ember_country_carbon_intensity.csv` içinde önbelleğe alır (kayıt
+gerektirmez). Dashboard bölüm 6'da tüm ülkeler karşılaştırmalı olarak gösterilir.
+Türkiye'nin şebekesi AB ortalamasının ~2.1 katı karbon yoğunluğunda (476 vs ~224
+gCO₂e/kWh, 2025) — 29 ülke arasında 4. en kirli şebeke. Bu veri yıllık ortalama
+olduğu için saatlik simülasyonlarda kullanılmıyor; saatlik Türkiye/AB verisi için
+`DEVAM_PLANI.md`'deki ENTSO-E adımlarına bakın.
+
 Ayrıca [`ecoscale/live_engine.py`](ecoscale/live_engine.py), Tablo 3.1'de tanımlanan APScheduler
 rolünün **gerçek zamanlı** çalışan karşılığıdır: Streamlit sürecinden bağımsız bir arka plan
 servisi olarak çalışır, her "tick"te bir simülasyon saati ilerler, ML tahmin motorundan gelen
@@ -70,10 +82,14 @@ butonunu kullanın ya da `pkill -f ecoscale.live_engine` çalıştırın.
 - **Deney 1 — gerçek karbon yoğunluğu verisi**: UK Carbon Intensity API'den çekilen
   gerçek İngiltere şebeke verisiyle tüm sonuçlar yeniden üretilebiliyor (`ecoscale/real_data.py`);
   gerçek veride de proaktif yaklaşım ~%18 karbon tasarrufu sağlıyor (sentetik veride ~%20)
+- **Deney 1b — Türkiye + AB ülkeleri karşılaştırması**: Ember verisiyle 29 ülkenin
+  yıllık ortalama karbon yoğunluğu karşılaştırılıyor (`ecoscale/country_carbon.py`);
+  Türkiye AB ortalamasının 2.1 katı ile en kirli 4. şebeke
 
 ## Sırada ne var (bkz. `DEVAM_PLANI.md`)
 
-- Deney 1'in Türkiye'ye uyarlanması (EPİAŞ Şeffaflık Platformu)
+- Gerçek **saatlik** Türkiye/AB verisi (ENTSO-E Transparency Platform — kullanıcının
+  kendi hesabıyla kayıt + token gerektiriyor, adımlar `DEVAM_PLANI.md`'de)
 - Deney 2: Gerçek bulut fiyatlandırma API entegrasyonu (AWS Price List / Azure Retail Prices)
 - Deney 3: Gerçek trafik verisi (Azure Public Dataset / Wikipedia Pageviews) ile model yeniden eğitimi
 - LSTM / hibrit model karşılaştırması (Tablo 2.1)

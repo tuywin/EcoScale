@@ -15,7 +15,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from ecoscale import live_state
+from ecoscale import country_carbon, live_state
 from ecoscale.simulation import SimulationConfig, run_simulation
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -247,6 +247,50 @@ else:
             st.caption("Henüz bir görev kararı alınmadı.")
         else:
             st.dataframe(pd.DataFrame(events[:10]), use_container_width=True, hide_index=True)
+
+st.divider()
+
+# --- Ulke karsilastirmasi (Turkiye + AB) ---
+st.subheader("6. Ülke Karşılaştırması — Türkiye ve AB Ülkelerinin Şebeke Karbon Yoğunluğu")
+st.caption(
+    "Kaynak: [Ember Yearly Electricity Data](https://ember-energy.org/data/yearly-electricity-data/) — "
+    "**yıllık ortalama** gCO₂e/kWh (saatlik değil). UK Carbon Intensity API'deki saatlik veriyle "
+    "doğrudan kıyaslanmamalıdır; burada amaç ülkeler arası göreli farkı göstermektir."
+)
+
+country_df = country_carbon.load_or_fetch()
+bar_colors = [
+    "#E45756" if row.is_turkey else ("#F58518" if not row.is_eu_member else "#54A24B")
+    for row in country_df.itertuples()
+]
+fig_countries = go.Figure(
+    go.Bar(
+        x=country_df["carbon_intensity"],
+        y=country_df["country"],
+        orientation="h",
+        marker_color=bar_colors,
+        text=country_df["carbon_intensity"].round(0),
+        textposition="outside",
+    )
+)
+fig_countries.update_layout(
+    height=700,
+    margin=dict(t=10, b=10, l=10),
+    xaxis_title="Karbon Yoğunluğu (gCO₂e/kWh, yıllık ortalama)",
+    yaxis=dict(autorange="reversed"),
+)
+st.plotly_chart(fig_countries, use_container_width=True)
+
+turkey_row = country_df[country_df["is_turkey"]].iloc[0]
+eu_avg = country_df[country_df["is_eu_member"]]["carbon_intensity"].mean()
+rank = int(country_df["carbon_intensity"].rank(ascending=False)[country_df["is_turkey"]].iloc[0])
+st.caption(
+    f"🇹🇷 Türkiye: **{turkey_row['carbon_intensity']:.0f} gCO₂e/kWh** ({int(turkey_row['year'])}) — "
+    f"AB ortalamasının (**{eu_avg:.0f}**) yaklaşık **{turkey_row['carbon_intensity'] / eu_avg:.1f} katı**, "
+    f"karşılaştırılan {len(country_df)} ülke arasında **{rank}. sırada** en karbon-yoğun şebeke. "
+    f"Bu da EcoScale gibi karbon-bilinçli sistemlerin Türkiye bağlamında görece daha yüksek etki potansiyeli "
+    f"taşıdığını gösteriyor."
+)
 
 if engine_alive and live_autorefresh:
     time.sleep(2)
